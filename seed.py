@@ -13,7 +13,10 @@ import os
 
 import db
 
-DEMO_PASSWORD = "senha123"
+# Em produção, defina as senhas por variável de ambiente (o repositório é público).
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "senha123")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "jacson")
+GUEST_PASSWORD = os.environ.get("GUEST_PASSWORD", "jana")
 
 # (nome, usuário, e-mail, senha, admin, bio)
 USERS = [
@@ -25,9 +28,9 @@ USERS = [
      "Viajante, fotógrafa e fã de café da manhã caprichado."),
     ("João Pereira", "joao", "joao@exemplo.com", DEMO_PASSWORD, False,
      "Trabalho remoto e procuro lugares com bom Wi-Fi e vista bonita."),
-    ("Jacson", "jacson", "jacson@exemplo.com", "jacson", True,
+    ("Jacson", "jacson", "jacson@exemplo.com", ADMIN_PASSWORD, True,
      "Administrador do Estadia e anfitrião de casas no litoral e na serra."),
-    ("Jana", "jana", "jana@exemplo.com", "jana", False,
+    ("Jana", "jana", "jana@exemplo.com", GUEST_PASSWORD, False,
      "Adoro viajar com a família e descobrir lugares novos pelo Brasil."),
 ]
 JACSON = 4
@@ -163,7 +166,10 @@ def main():
     conn.close()
     print("Banco recriado em %s" % db.DB_PATH)
     print("%d usuários, %d anúncios." % (len(USERS), len(LISTINGS)))
-    print("Admin/anfitrião: jacson / jacson  ·  Hóspede: jana / jana  ·  Demais contas: senha %s" % DEMO_PASSWORD)
+    if "ADMIN_PASSWORD" in os.environ:
+        print("Usuários: jacson (admin) e jana (hóspede), com as senhas definidas no ambiente.")
+    else:
+        print("Admin/anfitrião: jacson / jacson  ·  Hóspede: jana / jana  ·  Demais contas: senha %s" % DEMO_PASSWORD)
 
 
 if __name__ == "__main__":

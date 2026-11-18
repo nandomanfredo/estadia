@@ -108,12 +108,15 @@ Qualquer opção serve, desde que as requisições para `/estadia` cheguem a ele
       proxy_set_header Host $host;
   }
   ```
-- **Render / Railway / Fly.io:** comando de start `python3 server.py` com `HOST=0.0.0.0`, `BASE_PATH=/estadia`,
-  `COOKIE_SECURE=1` e um disco persistente apontado por `ESTADIA_DB` (senão o banco é apagado a cada deploy).
-  Como o domínio está no Cloudflare, uma regra/Worker encaminha `www.nextproject.com.br/estadia*` para o app.
+- **Render (configurado):** o arquivo [`render.yaml`](render.yaml) cria o serviço sozinho
+  (New → Blueprint → este repositório). As senhas de `jacson` e `jana` são pedidas no painel
+  (`ADMIN_PASSWORD`, `GUEST_PASSWORD`) e não ficam no código. No plano gratuito, os dados voltam à
+  demonstração a cada reinício; para guardar dados, use o plano Starter com o disco indicado no arquivo.
+- **Domínio:** o Worker em [`deploy/cloudflare-worker.js`](deploy/cloudflare-worker.js) encaminha
+  `www.nextproject.com.br/estadia*` para o Render, sem afetar o resto do domínio.
 
-> ⚠️ **Antes de publicar na internet:** as senhas de demonstração (`jacson`, `jana`, `senha123`) estão
-> neste repositório público. Não rode `seed.py` em produção sem trocá-las — principalmente a do administrador.
+> ⚠️ As senhas padrão (`jacson`, `jana`, `senha123`) só valem localmente. Em produção use `ADMIN_PASSWORD`,
+> `GUEST_PASSWORD` e `DEMO_PASSWORD` — o repositório é público.
 
 ## Próximos passos sugeridos
 - **Pagamentos** (ex.: Stripe ou Mercado Pago): adicionar status `awaiting_payment` entre a criação/confirmação e `confirmed`

@@ -1,0 +1,40 @@
+# Blueprint do Render: https://render.com/docs/blueprint-spec
+# No painel do Render: New > Blueprint > escolha este repositório.
+services:
+  - type: web
+    name: estadia
+    runtime: python
+    # Plano gratuito: o servidor "dorme" após 15 min sem acesso e o banco volta
+    # aos dados de demonstração a cada reinício/deploy.
+    # Para guardar os dados: troque para "starter" e descomente o bloco "disk" e as
+    # variáveis ESTADIA_DB / UPLOAD_DIR abaixo.
+    plan: free
+    region: oregon
+    buildCommand: echo "Sem dependências para instalar"
+    startCommand: python3 server.py
+    healthCheckPath: /estadia/api/meta
+    autoDeploy: true
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: BASE_PATH
+        value: /estadia
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: SEED_IF_EMPTY
+        value: "1"
+      # Senhas pedidas no painel na criação (não ficam no repositório público).
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GUEST_PASSWORD
+        sync: false
+      - key: DEMO_PASSWORD
+        generateValue: true
+      # - key: ESTADIA_DB
+      #   value: /var/data/estadia.db
+      # - key: UPLOAD_DIR
+      #   value: /var/data/uploads
+    # disk:
+    #   name: estadia-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 import db
 
 PUBLIC_DIR = os.path.join(db.BASE_DIR, "public")
-UPLOAD_DIR = os.path.join(db.BASE_DIR, "uploads")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", os.path.join(db.BASE_DIR, "uploads"))
 PORT = int(os.environ.get("PORT", "8000"))
 # Endereço de escuta: 127.0.0.1 (só este computador) ou 0.0.0.0 (servidor/contêiner).
 HOST = os.environ.get("HOST", "127.0.0.1")
@@ -870,6 +870,14 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     mimetypes.add_type("application/javascript", ".js")
     db.init_schema()
+    if os.environ.get("SEED_IF_EMPTY") == "1":
+        # Hospedagem sem disco persistente começa vazia: carrega os dados de demonstração.
+        conn = db.connect()
+        empty = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0
+        conn.close()
+        if empty:
+            import seed
+            seed.main()
     try:
         server = ThreadingHTTPServer((HOST, PORT), Handler)
     except OSError as e:
