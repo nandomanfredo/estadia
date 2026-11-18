@@ -8,7 +8,7 @@
 -- navegador não é confiável.
 -- =====================================================================
 
-create extension if not exists btree_gist;
+create extension if not exists btree_gist with schema extensions;
 
 -- ------------------------------------------------------------ tabelas
 
@@ -111,7 +111,7 @@ create table if not exists public.favorites (
 
 -- "Hoje" no fuso do Brasil (o servidor do Supabase usa UTC).
 create or replace function public.today_br() returns date
-language sql stable as $$ select (now() at time zone 'America/Sao_Paulo')::date $$;
+language sql stable set search_path = public as $$ select (now() at time zone 'America/Sao_Paulo')::date $$;
 
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
@@ -350,6 +350,22 @@ begin
   if not public.is_admin() then raise exception 'Acesso restrito ao administrador.'; end if;
   return query select u.id, u.email::text from auth.users u;
 end $$;
+
+-- ------------------------------------------------------------ permissões das funções
+
+-- Só o gatilho de cadastro usa esta função.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+-- Exigem login (cada uma ainda confere permissões por dentro).
+revoke execute on function public.create_booking(bigint, date, date, int, text) from public, anon;
+revoke execute on function public.booking_action(bigint, text) from public, anon;
+revoke execute on function public.create_review(bigint, int, text) from public, anon;
+revoke execute on function public.admin_users() from public, anon;
+grant execute on function public.create_booking(bigint, date, date, int, text) to authenticated;
+grant execute on function public.booking_action(bigint, text) to authenticated;
+grant execute on function public.create_review(bigint, int, text) to authenticated;
+grant execute on function public.admin_users() to authenticated;
+-- Públicas por design: login_email, listing_unavailable, booked_listing_ids (não expõem quem reservou)
+-- e is_admin (usada nas regras RLS; só responde sobre o próprio usuário).
 
 -- ------------------------------------------------------------ fotos (Supabase Storage)
 
