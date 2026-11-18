@@ -1,20 +1,20 @@
 /**
- * Cloudflare Worker: encaminha www.nextproject.com.br/estadia* para o app no Render.
+ * Cloudflare Worker (opcional): faz www.nextproject.com.br/estadia mostrar o site do GitHub Pages.
  * O restante do domínio não é afetado.
  *
- * 1. Troque ORIGIN pela URL do serviço no Render (sem barra no final).
- * 2. Rotas do Worker:  www.nextproject.com.br/estadia*   e   nextproject.com.br/estadia*
+ * Rotas do Worker:  www.nextproject.com.br/estadia*   e   nextproject.com.br/estadia*
  */
-const ORIGIN = 'https://estadia.onrender.com';
+const ORIGIN = 'https://nandomanfredo.github.io'; // o site está em /estadia/ lá também
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    // /estadia (sem barra) -> /estadia/ para os caminhos relativos funcionarem
+    if (url.pathname === '/estadia') {
+      return Response.redirect(url.origin + '/estadia/' + url.search, 301);
+    }
     const target = new URL(url.pathname + url.search, ORIGIN);
-    // Mantém método, cabeçalhos (inclui o cookie de sessão) e corpo da requisição.
-    const proxied = new Request(target, request);
-    const response = await fetch(proxied, { redirect: 'manual' });
-    // Redirecionamentos do app usam caminhos relativos, então continuam no domínio público.
+    const response = await fetch(new Request(target, request), { redirect: 'manual' });
     return response;
   },
 };

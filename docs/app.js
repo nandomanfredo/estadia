@@ -25,7 +25,8 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 const todayISO = () => toISO(new Date());
 const fmtDate = (s) => parseISO(s).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 const fmtShort = (s) => parseISO(s).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-const fmtDateTime = (s) => new Date(s.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const parseTs = (s) => (/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? new Date(s) : new Date(s.replace(' ', 'T') + 'Z'));
+const fmtDateTime = (s) => parseTs(s).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 const nightsBetween = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const go = (path) => { location.hash = '#' + path; };
@@ -55,21 +56,8 @@ function toast(msg, isError = false) {
 }
 
 async function api(path, { method = 'GET', body } = {}) {
-  // Caminho relativo: funciona em localhost:8000/ e em dominio.com/estadia/
-  const res = await fetch('api' + path, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: 'same-origin',
-  });
-  let data = {};
-  try { data = await res.json(); } catch (_) { /* vazio */ }
-  if (!res.ok) {
-    const err = new Error(data.error || 'Algo deu errado.');
-    err.status = res.status;
-    throw err;
-  }
-  return data;
+  // Os dados vêm do Supabase (backend.js); a interface não precisa saber disso.
+  return Backend.request(method, path, body);
 }
 
 /** Envolve um handler async mostrando erros em toast e desabilitando o botão. */
@@ -1085,7 +1073,7 @@ async function viewAdmin(main, _m, params) {
 const routes = [
   [/^\/$/, viewHome],
   [/^\/listing\/(\d+)$/, viewListing],
-  [/^\/user\/(\d+)$/, viewUser],
+  [/^\/user\/([\w-]+)$/, viewUser],
   [/^\/login$/, viewLogin],
   [/^\/signup$/, viewSignup],
   [/^\/trips$/, viewTrips, true],
@@ -1126,6 +1114,13 @@ async function router() {
 }
 
 (async function boot() {
+  if (!Backend.configured) {
+    $('#app').innerHTML = `<div class="auth card-box"><h1>Quase lá!</h1>
+      <p>O Estadia precisa ser conectado ao banco de dados (Supabase).</p>
+      <p class="muted small">Preencha <code>docs/config.js</code> com a Project URL e a chave anon do seu projeto
+      Supabase. Veja o passo a passo no README do repositório.</p></div>`;
+    return;
+  }
   try {
     const [meRes, meta] = await Promise.all([api('/auth/me'), api('/meta')]);
     state.me = meRes.user; state.meta = meta;
